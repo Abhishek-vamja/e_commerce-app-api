@@ -76,3 +76,56 @@ class Product(models.Model):
 
     def __str__(self):
         return '{}, {}'.format(self.title,self.category)
+
+class Address(models.Model):
+    """Address of users objects."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    address = models.TextField()
+
+    def __str__(self):
+        return self.user
+
+class Cart(models.Model):
+    """Cart objects."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    product = models.ManyToManyField(Product)
+    address = models.ForeignKey(Address,on_delete=models.CASCADE)
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-date_created']
+
+    def __str__(self):
+        return self.user
+
+
+STATUS_CHOICE = (
+    ('Order Pending','Order Pending'),
+    ('Confirmed','Confirmed'),
+    ('Packed','Packed'),
+    ('Shipped','Shipped'),
+    ('Outer Delivery','Outer Delivery'),
+    ('Delivered','Delivered'),
+    ('Favorite','Favorite')
+)
+
+class Favorite(models.Model):
+    """Favorite products objects."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    Product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    status = models.CharField(max_length=255,choices=STATUS_CHOICE,default='Favorite')
+    date_created = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return self.user
+
+class CheckOut(models.Model):
+    """Checkout product objects."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    cart = models.ManyToManyField(Cart)
+    status = models.CharField(max_length=255,choices=STATUS_CHOICE,default='Confirmed')
+    date_checkout = models.DateField(auto_now_add=True)
+    date_delivered = models.DateField()
+
+    def __str__(self):
+        return self.user
