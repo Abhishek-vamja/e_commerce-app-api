@@ -8,10 +8,14 @@ from product.views import *
 from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
-router.register('details',ProductDetail)
+router.register('view',product)
+router.register('addresses/my',AddressView)
+router.register('create',Product_detail_for_admin)
+router.register('checkout',checkout)
+router.register('favorite/my',FavoriteView)
 
 urlpatterns = [
-    path('view/',ProductView.as_view({'get': 'list'}),name='products'),
-
-    path('',include(router.urls))
+    path('',include(router.urls)),
+    
+    path('favorite/<str:product_id>/',Create_favorite.as_view()),
 ]

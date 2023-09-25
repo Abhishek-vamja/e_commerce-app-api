@@ -72,23 +72,33 @@ class Product(models.Model):
     description = models.TextField()
     image = models.ImageField(upload_to='img/prod',null=True)
     available = models.BooleanField(default=True)
+    slug = models.SlugField(default="")
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
         return '{}, {}'.format(self.title,self.category)
 
+SLUG_CHOICE = (
+    ('Home','Home'),
+    ('Office','Office'),
+    ('Friends','Friends'),
+    ('Family','Family')
+)
+
 class Address(models.Model):
     """Address of users objects."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    slug = models.CharField(max_length=255,choices=SLUG_CHOICE,default='Home')
     address = models.TextField()
 
     def __str__(self):
-        return self.user
+        return str(self.user)
 
 class Cart(models.Model):
     """Cart objects."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    product = models.ManyToManyField(Product)
+    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    quantity = models.IntegerField(default=1)
     address = models.ForeignKey(Address,on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
 
@@ -96,7 +106,7 @@ class Cart(models.Model):
         ordering = ['-date_created']
 
     def __str__(self):
-        return self.user
+        return str(self.user)
 
 
 STATUS_CHOICE = (
@@ -109,23 +119,27 @@ STATUS_CHOICE = (
     ('Favorite','Favorite')
 )
 
+FAV_CHOICE = (
+    ('Favorite','Favorite'),
+)
+
 class Favorite(models.Model):
     """Favorite products objects."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    Product = models.ForeignKey(Product,on_delete=models.CASCADE)
-    status = models.CharField(max_length=255,choices=STATUS_CHOICE,default='Favorite')
+    product = models.ForeignKey(Product,on_delete=models.CASCADE)
+    status = models.CharField(max_length=255,choices=FAV_CHOICE,default='Favorite')
     date_created = models.DateTimeField(auto_now_add=True)
 
     def __str__(self):
-        return self.user
+        return str(self.user)
 
-class CheckOut(models.Model):
+class Checkout(models.Model):
     """Checkout product objects."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     cart = models.ManyToManyField(Cart)
     status = models.CharField(max_length=255,choices=STATUS_CHOICE,default='Confirmed')
     date_checkout = models.DateField(auto_now_add=True)
-    date_delivered = models.DateField()
+    date_delivered = models.DateField(null=True)
 
     def __str__(self):
-        return self.user
+        return str(self.user)

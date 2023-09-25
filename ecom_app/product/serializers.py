@@ -3,8 +3,9 @@ Serializer for product view.
 """
 
 from rest_framework import serializers
+from rest_framework.response import Response
 
-from core.models import Category , Product
+from core.models import *
 
 
 class CategorySerializer(serializers.ModelSerializer):
@@ -14,13 +15,14 @@ class CategorySerializer(serializers.ModelSerializer):
         model = Category
         fields = ['title']
 
+
 class ProductSerializer(serializers.ModelSerializer):
     """Serializer for product."""
 
     class Meta:
         model = Product
         fields = [
-            'id','title','category','price','description','image','available','date_created'
+            'id','title','category','price','description','slug','image','available','date_created'
             ]
     
     def create(self, validated_data):
@@ -35,3 +37,27 @@ class ProductSerializer(serializers.ModelSerializer):
         instance.save()
 
         return instance
+    
+
+class FavoriteSerializer(serializers.ModelSerializer):
+    """Serializer for favorite product objects."""
+
+    class Meta:
+        model = Favorite
+        fields = ['id','product','status','date_created']
+
+
+class AddressSerializer(serializers.ModelSerializer):
+    """Serializer for address objects."""
+
+    class Meta:
+        model = Address
+        fields = ['id','slug','address']
+
+
+class CheckoutSerializer(serializers.ModelSerializer):
+    """Serializer for checkout objects."""
+
+    class Meta:
+        model = Checkout
+        fields = ['id','cart','status','date_checkout']
