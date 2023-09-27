@@ -1,8 +1,6 @@
 """
 Models for our API.
 """
-
-from typing import Any
 from django.db import models
 from django.conf import settings
 from django.contrib.auth.models import (
@@ -78,28 +76,12 @@ class Product(models.Model):
     def __str__(self):
         return '{}, {}'.format(self.title,self.category)
 
-SLUG_CHOICE = (
-    ('Home','Home'),
-    ('Office','Office'),
-    ('Friends','Friends'),
-    ('Family','Family')
-)
-
-class Address(models.Model):
-    """Address of users objects."""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    slug = models.CharField(max_length=255,choices=SLUG_CHOICE,default='Home')
-    address = models.TextField()
-
-    def __str__(self):
-        return str(self.user)
 
 class Cart(models.Model):
     """Cart objects."""
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
     product = models.ForeignKey(Product,on_delete=models.CASCADE)
     quantity = models.IntegerField(default=1)
-    address = models.ForeignKey(Address,on_delete=models.CASCADE)
     date_created = models.DateTimeField(auto_now_add=True)
 
     class Meta:
@@ -107,6 +89,18 @@ class Cart(models.Model):
 
     def __str__(self):
         return str(self.user)
+    
+    def get_total_item_price(self):
+        """Get total price of product."""
+        return self.product.price * self.quantity
+    
+    @property
+    def total_cost(self):
+        """Total amount of cart."""
+        total = 0
+        for i in self.product.all():
+            total += i.get_total_item_price()
+        return total
 
 
 STATUS_CHOICE = (
@@ -130,16 +124,34 @@ class Favorite(models.Model):
     status = models.CharField(max_length=255,choices=FAV_CHOICE,default='Favorite')
     date_created = models.DateTimeField(auto_now_add=True)
 
+    class Meta:
+        ordering = ['-date_created']
+
     def __str__(self):
         return str(self.user)
 
-class Checkout(models.Model):
-    """Checkout product objects."""
-    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    cart = models.ManyToManyField(Cart)
-    status = models.CharField(max_length=255,choices=STATUS_CHOICE,default='Confirmed')
-    date_checkout = models.DateField(auto_now_add=True)
-    date_delivered = models.DateField(null=True)
 
-    def __str__(self):
+class Checkout(models.Model):
+    """Checkout objects."""
+    user = models.ForeignKey(settings.AUTH_USER_MODEL, on_delete=models.CASCADE)
+    full_name = models.CharField(max_length=100)
+    address = models.TextField(blank=False)
+    phone = models.CharField(max_length=100)
+    email = models.EmailField(max_length=100)
+    note = models.TextField(blank=True)
+
+    def __str__(self) -> str:
+        return str(self.user)
+
+
+class OrderPlaced(models.Model):
+    user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
+    cart = models.ForeignKey(Cart,on_delete=models.CASCADE)
+    status = models.CharField(max_length=50,choices=STATUS_CHOICE,default='Order Pending')
+    ordered_date = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        ordering = ['-ordered_date']
+    
+    def __str__(self) -> str:
         return str(self.user)

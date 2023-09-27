@@ -47,12 +47,12 @@ class FavoriteSerializer(serializers.ModelSerializer):
         fields = ['id','product','status','date_created']
 
 
-class AddressSerializer(serializers.ModelSerializer):
-    """Serializer for address objects."""
+class CartSerializer(serializers.ModelSerializer):
+    """Serializer for cart objects."""
 
     class Meta:
-        model = Address
-        fields = ['id','slug','address']
+        model = Cart
+        fields = ['id','product','quantity','date_created']
 
 
 class CheckoutSerializer(serializers.ModelSerializer):
@@ -60,4 +60,12 @@ class CheckoutSerializer(serializers.ModelSerializer):
 
     class Meta:
         model = Checkout
-        fields = ['id','cart','status','date_checkout']
+        fields = ['id','full_name','phone','email','address','note']
+
+
+class OrderSerializer(serializers.ModelSerializer):
+    """Serializer for order objects."""
+
+    class Meta:
+        model = OrderPlaced
+        fields = ['id','cart','status','ordered_date']
