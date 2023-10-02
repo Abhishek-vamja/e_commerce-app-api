@@ -116,7 +116,7 @@ class Remove_from_favorite(APIView):
 
     def post(self,request: Request, fav_id: str) -> Response:
         try:
-            fav_obj = Favorite.objects.get(id=fav_id)
+            fav_obj = Favorite.objects.get(id=fav_id,user=request.user)
             fav_obj.delete()
             return Response({'Message':'Item unfavorite!!'})
         
@@ -197,7 +197,7 @@ class Update_from_cart(APIView):
 
     def post(self,request: Request, cart_id: str) -> Response:
         try:
-            cart_obj = Cart.objects.get(id=cart_id)
+            cart_obj = Cart.objects.get(id=cart_id,user=request.user)
             cart_obj.quantity += 1
             cart_obj.save()
             return Response({'Message':'Update quantity successfully!!'})
