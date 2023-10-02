@@ -9,18 +9,23 @@ from rest_framework.routers import DefaultRouter
 
 router = DefaultRouter()
 router.register('view',ProductView)
-router.register('create',Product_detail_for_admin)
 router.register('cart/my',CartView,basename='cart')
-router.register('favorite/my',FavoriteView)
-# router.register('addresses/my',AddressView)
+router.register('favorite/my',FavoriteView,basename='favorite')
 router.register('checkout',CheckoutView,basename='checkout')
 
 urlpatterns = [
     path('',include(router.urls)),
     
+    path('view/<int:id>/',ProductDetailView.as_view({'get':'list'})),
+    
     path('add_to_cart/<str:product_id>/',Add_to_cart.as_view()),
-    path('add_to_favorite/<str:product_id>/',Add_to_favorite.as_view()),
+    path('cart/my/remove/<str:cart_id>/',Remove_from_cart.as_view()),
+    path('cart/my/update/<str:cart_id>/',Update_from_cart.as_view()),
 
+    path('favorite/my/<int:id>/',FavoriteDetailView.as_view({'get':'list'})),
+    path('add_to_favorite/<str:product_id>/',Add_to_favorite.as_view()),
+    path('favorite/my/remove/<str:fav_id>/',Remove_from_favorite.as_view()),
+    
     path('my_order/',Orders.as_view()),
     path('order_placed/<str:cart_id>/',OrderView.as_view()),
 ]

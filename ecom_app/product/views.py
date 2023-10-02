@@ -7,6 +7,8 @@ from .serializers import *
 
 from http import HTTPStatus
 
+from django.shortcuts import render
+from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 
 from rest_framework import viewsets
@@ -27,10 +29,12 @@ class LargeResultsSetPagination(PageNumberPagination):
     max_page_size = 10000
 
 
-class ProductView(viewsets.ReadOnlyModelViewSet):
+class ProductView(mixins.ListModelMixin,
+                viewsets.GenericViewSet):
     """Show all products."""
     serializer_class = ProductSerializer
     queryset = Product.objects.all()
+
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
@@ -46,42 +50,47 @@ class ProductView(viewsets.ReadOnlyModelViewSet):
     pagination_class = LargeResultsSetPagination
 
 
-class Product_detail_for_admin(
-    mixins.CreateModelMixin,
-    mixins.DestroyModelMixin,
-    mixins.UpdateModelMixin,
-    mixins.ListModelMixin,
-    viewsets.GenericViewSet
-    ):
-    """Handle products objects create , update and delete.
-    This class accessible only for Admin.
-    """
-    serializer_class = ProductSerializer
-    queryset = Product.objects.all()
+class ProductDetailView(viewsets.ViewSet):
+    """"Detail product view for user."""
 
     authentication_classes = [TokenAuthentication]
-    permission_classes = [IsAuthenticated,IsAdminUser]
+    permission_classes = [IsAuthenticated]
 
-    filter_backends = [filters.SearchFilter]
-    search_fields = ('title','slug')
+    def list(self,request: Request, id: int) -> Response:
+        prod_obj = Product.objects.filter(id=id)
+        serializer = ProductDetailSerializer(prod_obj,many=True)
 
-    pagination_class = LargeResultsSetPagination
-    
+        return Response(serializer.data)
+      
 
-class FavoriteView(viewsets.ReadOnlyModelViewSet):
+class FavoriteView(mixins.ListModelMixin,
+                   viewsets.GenericViewSet):
     """Handle favorite product objects create , update and delete."""
     serializer_class = FavoriteSerializer
     queryset = Favorite.objects.all()
-
+    
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
     pagination_class = LargeResultsSetPagination
 
     def get_queryset(self):
-        """Get objects for authenticated users."""
+        """Get objects for authenticated user."""
         queryset = self.queryset
         return queryset.filter(user=self.request.user).order_by('-id').distinct()
+
+
+class FavoriteDetailView(viewsets.ViewSet):
+    """Handle favorite objects detail view."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def list(self,request: Request, id: int) -> Response:
+            favorite_obj = Favorite.objects.filter(id=id,user=request.user)
+            serializer = FavoriteDetailSerializer(favorite_obj,many=True)
+
+            return Response(serializer.data)
 
 
 class Add_to_favorite(APIView):
@@ -97,6 +106,22 @@ class Add_to_favorite(APIView):
         except:
             Favorite.objects.create(user_id=str(request.user.id),product_id=str(Product.objects.get(id=product_id).id))
             return Response({'msg':'Added to favorite items!!','url':'http://127.0.0.1:8000/api/product/favorite/my/'},status=HTTPStatus.OK)
+
+
+class Remove_from_favorite(APIView):
+    """Remove favorite objects."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request: Request, fav_id: str) -> Response:
+        try:
+            fav_obj = Favorite.objects.get(id=fav_id)
+            fav_obj.delete()
+            return Response({'Message':'Item unfavorite!!'})
+        
+        except:
+            return Response({'Message':'Something went wrong or Please check id.'})
 
 
 class CartView(viewsets.ViewSet):
@@ -129,6 +154,7 @@ class CartView(viewsets.ViewSet):
         
         return Response({'Cart_Items':{'Data':serializer.data,'product_name':my_list,'Total_cart_amount':total}})
 
+
 class Add_to_cart(APIView):
     """Create cart item objects."""
 
@@ -145,6 +171,39 @@ class Add_to_cart(APIView):
         except:
             Cart.objects.create(user_id=str(request.user.id),product_id=str(Product.objects.get(id=product_id).id))
             return Response({'Message':'Add to cart successfully!!'},status=HTTPStatus.OK)
+
+
+class Remove_from_cart(APIView):
+    """Delete cart item objects."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request: Request, cart_id: str) -> Response:
+        try:
+            cart_obj = Cart.objects.get(id=cart_id)
+            cart_obj.delete()
+            return Response({'Message':'Item remove successfully!!'})
+
+        except:
+            return Response({'Message':'Please entre valid id.'})
+
+
+class Update_from_cart(APIView):
+    """Update cart item objects."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self,request: Request, cart_id: str) -> Response:
+        try:
+            cart_obj = Cart.objects.get(id=cart_id)
+            cart_obj.quantity += 1
+            cart_obj.save()
+            return Response({'Message':'Update quantity successfully!!'})
+        
+        except:
+            return Response({'Message':'Please enter valid id.'})
 
 
 class CheckoutView(viewsets.ViewSet):
@@ -193,6 +252,7 @@ class CheckoutView(viewsets.ViewSet):
         
         return Response(serializer.errors)
 
+
 class Orders(APIView):
     """Listing all order objects for authenticated user."""
     
@@ -209,6 +269,7 @@ class Orders(APIView):
             return Response({'Message':'Not order yet!!'})
         return Response(serializer.data)
 
+
 #.. Work on it
 class OrderView(APIView):
     """
@@ -224,3 +285,7 @@ class OrderView(APIView):
         except Exception as e:
             print(e,'EEEE')
         return Response(status=HTTPStatus.OK)
+
+
+def radhe_radhe(request):
+    return render(request,'radhe.html')
