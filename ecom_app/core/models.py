@@ -144,14 +144,21 @@ class Checkout(models.Model):
         return str(self.user)
 
 
+PAYMENT = (
+    ('Online','Online'),
+    ('COD','COD')
+)
+
 class OrderPlaced(models.Model):
     user = models.ForeignKey(settings.AUTH_USER_MODEL,on_delete=models.CASCADE)
-    cart = models.ForeignKey(Cart,on_delete=models.CASCADE)
-    status = models.CharField(max_length=50,choices=STATUS_CHOICE,default='Order Pending')
+    items = models.ManyToManyField('Product')
+    status = models.CharField(max_length=50,choices=STATUS_CHOICE,default='Confirmed')
+    paid = models.BooleanField(default=False)
+    payment = models.CharField(max_length=255,choices=PAYMENT,default='COD')
     ordered_date = models.DateTimeField(auto_now_add=True)
 
     class Meta:
         ordering = ['-ordered_date']
     
     def __str__(self) -> str:
-        return str(self.user)
+        return f"Order {self.id} by {self.user.name}"

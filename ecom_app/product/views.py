@@ -11,7 +11,7 @@ from django.shortcuts import render
 from django.urls import reverse
 from django_filters.rest_framework import DjangoFilterBackend
 
-from rest_framework import viewsets
+from rest_framework import viewsets , generics
 from django.core.exceptions import ObjectDoesNotExist
 from rest_framework.views import APIView
 from rest_framework.request import Request
@@ -221,7 +221,6 @@ class CheckoutView(viewsets.ViewSet):
         cart = cart_obj.filter(user=self.request.user).order_by('-id').distinct()
 
         carts = Cart.objects.filter(user=self.request.user)
-        # print(len(carts),'LENNNN!!!!')
 
         amount = 0
         for c in cart:
@@ -232,7 +231,6 @@ class CheckoutView(viewsets.ViewSet):
         my_list = []
         for i in carts:
             my_list.append(str(i.product))
-        # print(my_list)
         
         serializer = CheckoutSerializer(checkout,many=True)
 
@@ -253,7 +251,7 @@ class CheckoutView(viewsets.ViewSet):
         return Response(serializer.errors)
 
 
-class Orders(APIView):
+class OrdersView(APIView):
     """Listing all order objects for authenticated user."""
     
     authentication_classes = [TokenAuthentication]
@@ -262,29 +260,55 @@ class Orders(APIView):
     def get(self,request: Request) -> Response:
         order_obj = OrderPlaced.objects.all()
         order = order_obj.filter(user=self.request.user).order_by('-id').distinct()
-
         serializer = OrderSerializer(order,many=True)
 
         if serializer.data == []:
-            return Response({'Message':'Not order yet!!'})
+            return Response({'Message':'Not order record found!!'})
         return Response(serializer.data)
 
 
-#.. Work on it
-class OrderView(APIView):
+class OrderDetailView(APIView):
+    """TRy.."""
+
+    authentication_classes = [TokenAuthentication]
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request: Request, order_id: str):
+        order_obj = OrderPlaced.objects.get(id=order_id,user=request.user)
+
+        if order_obj.status == 'Shipped' or order_obj.status == 'Outer Delivery':
+            return Response({'Message':"You can't cancel order!!"})
+        elif order_obj.status == 'Delivered':
+            if order_obj.paid == True:
+                order_obj.delete()
+                return Response({'Message':'Your order record deleted!!'})       
+        order_obj.delete()
+        return Response({'Message':'Order cancel successfully.'})
+
+
+class Order_Placed(APIView):
     """
-    Listing and creating order objects for authenticated user.
+    Handle create order objects.
     """
 
     authentication_classes = [TokenAuthentication]
     permission_classes = [IsAuthenticated]
 
-    def post(self,request: Request, cart_id: str) -> Response:
-        try:
-            OrderPlaced.objects.create(user_id=str(request.user.id),cart_id=str(Cart.objects.get(id=cart_id).id))
-        except Exception as e:
-            print(e,'EEEE')
-        return Response(status=HTTPStatus.OK)
+    def post(self, request: Request):
+        serializer = OrderSerializer(data=request.data)
+        user_cart = Cart.objects.filter(user=request.user)
+
+        if serializer.is_valid():
+            items = [cart.product for cart in user_cart]
+
+            if items == []:
+                return Response({'Message':'Please select items..'})
+            
+            serializer.save(user=request.user, items=items)
+            user_cart.delete()
+            return Response(serializer.data)
+        
+        return Response(serializer.errors)
 
 
 def radhe_radhe(request):

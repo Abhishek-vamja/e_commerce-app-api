@@ -82,7 +82,17 @@ class CheckoutSerializer(serializers.ModelSerializer):
 
 class OrderSerializer(serializers.ModelSerializer):
     """Serializer for order objects."""
+    items = serializers.PrimaryKeyRelatedField(many=True,queryset=Product.objects.all())
 
     class Meta:
         model = OrderPlaced
-        fields = ['id','cart','status','ordered_date']
+        fields = ['id','items','status','paid','payment','ordered_date']
+    
+    def create(self, validated_data):
+        items_data =validated_data.pop('items')
+        order = OrderPlaced.objects.create(**validated_data)
+
+        for item_data in items_data:
+            order.items.add(item_data)
+        return order
+

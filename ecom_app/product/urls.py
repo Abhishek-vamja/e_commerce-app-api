@@ -26,6 +26,7 @@ urlpatterns = [
     path('add_to_favorite/<str:product_id>/',Add_to_favorite.as_view()),
     path('favorite/my/remove/<str:fav_id>/',Remove_from_favorite.as_view()),
     
-    path('my_order/',Orders.as_view()),
-    path('order_placed/<str:cart_id>/',OrderView.as_view()),
+    path('orders/',OrdersView.as_view()),
+    path('orders/cancel/<str:order_id>/',OrderDetailView.as_view()),
+    path('order_placed/',Order_Placed.as_view(),name='order_placed'),
 ]
